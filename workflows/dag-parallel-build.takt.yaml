@@ -1,0 +1,118 @@
+# DAG Parallel Build — TAKT Workflow
+#
+# Demonstrates parallel execution with DAG edges.
+# Three coders work independently, then a reviewer synthesizes.
+
+name: dag-parallel-build
+version: "1.0"
+goal: "Parallel implementation of multiple components with synthesis"
+
+personas:
+  - name: lead
+    role: planner
+    obligations:
+      - "Decompose into parallel-safe task groups"
+      - "Define clear interface contracts between components"
+    prohibitions:
+      - "Never assign overlapping file ownership"
+
+  - name: alice
+    role: coder
+    specialist: coder
+    obligations:
+      - "Implement component A"
+      - "Export clean interfaces"
+    prohibitions:
+      - "Never modify component B or C files"
+
+  - name: bob
+    role: coder
+    specialist: coder
+    obligations:
+      - "Implement component B"
+    prohibitions:
+      - "Never modify component A or C files"
+
+  - name: carol
+    role: coder
+    specialist: coder
+    obligations:
+      - "Implement component C"
+    prohibitions:
+      - "Never modify component A or B files"
+
+  - name: integrator
+    role: reviewer
+    obligations:
+      - "Verify interface compatibility between components"
+      - "Write integration tests"
+
+movements:
+  - name: plan
+    goal: "Define component boundaries and interfaces"
+    goal_gate: 0.8
+    assigned_to: lead
+    type: document
+    model_config:
+      tier: sota
+      max_tokens: 20000
+
+  - name: component-a
+    goal: "Implement component A"
+    goal_gate: 0.7
+    assigned_to: alice
+    type: code
+    context_strategy: indexed
+    model_config:
+      tier: fast
+      max_tokens: 40000
+    retry:
+      max_attempts: 3
+      backoff: exponential
+
+  - name: component-b
+    goal: "Implement component B"
+    goal_gate: 0.7
+    assigned_to: bob
+    type: code
+    context_strategy: indexed
+    model_config:
+      tier: fast
+      max_tokens: 40000
+    retry:
+      max_attempts: 3
+      backoff: exponential
+
+  - name: component-c
+    goal: "Implement component C"
+    goal_gate: 0.7
+    assigned_to: carol
+    type: code
+    context_strategy: indexed
+    model_config:
+      tier: fast
+      max_tokens: 40000
+    retry:
+      max_attempts: 3
+      backoff: exponential
+
+  - name: integrate
+    goal: "Verify integration and write integration tests"
+    goal_gate: 0.8
+    assigned_to: integrator
+    type: review
+    critic: true
+    model_config:
+      tier: sota
+      max_tokens: 30000
+
+  edges:
+    - { from: plan, to: component-a }
+    - { from: plan, to: component-b }
+    - { from: plan, to: component-c }
+    - { from: component-a, to: integrate }
+    - { from: component-b, to: integrate }
+    - { from: component-c, to: integrate }
+
+rules:
+  satisfaction_threshold: 0.75

@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Coverage
+coverage/
+
+# Holdout tests — agents must never see these
+tests/holdout/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+*.swp
+*.swo
+*~
+
+# Env
+.env
+.env.*
+
+# SQLite runtime databases
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+
+# Semantic index cache
+.dark-factory-index/
+
+# Context store runtime
+context_store.yaml
+
+# Shared clones (runtime)
+.dark-factory-clones/
+
+# Logs
+*.log

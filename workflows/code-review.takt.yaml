@@ -1,0 +1,52 @@
+# Code Review — TAKT Workflow
+#
+# Lightweight review-only workflow.
+
+name: code-review
+version: "1.0"
+goal: "Perform thorough code review on a changeset"
+
+personas:
+  - name: reviewer
+    role: reviewer
+    obligations:
+      - "Check for security vulnerabilities"
+      - "Verify type safety and null handling"
+      - "Flag any dead code or unused imports"
+      - "Assess test coverage adequacy"
+    prohibitions:
+      - "Never auto-approve without findings"
+
+  - name: security-reviewer
+    role: reviewer
+    obligations:
+      - "Scan for injection vulnerabilities"
+      - "Verify authentication and authorization"
+      - "Check for sensitive data exposure"
+    prohibitions:
+      - "Never approve code with unresolved security findings"
+
+movements:
+  - name: general-review
+    goal: "Review code quality, patterns, and correctness"
+    goal_gate: 0.8
+    assigned_to: reviewer
+    type: review
+    critic: true
+    model_config:
+      tier: sota
+      max_tokens: 20000
+
+  - name: security-review
+    goal: "Focused security review"
+    goal_gate: 0.9
+    assigned_to: security-reviewer
+    type: review
+    model_config:
+      tier: sota
+      max_tokens: 15000
+
+  edges: []
+
+rules:
+  satisfaction_threshold: 0.8

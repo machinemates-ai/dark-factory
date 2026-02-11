@@ -1,0 +1,101 @@
+# Feature Build — TAKT Workflow
+#
+# Standard software feature implementation with
+# plan → implement → test → review gate structure.
+
+name: feature-build
+version: "1.0"
+goal: "Implement a software feature end-to-end with verification"
+
+personas:
+  - name: planner
+    role: planner
+    obligations:
+      - "Decompose into ≤7 parallel tasks"
+      - "Produce PLAN.md with acceptance criteria per task"
+    prohibitions:
+      - "Never generate code directly"
+
+  - name: coder
+    role: coder
+    specialist: coder
+    obligations:
+      - "Write tests for all public functions"
+      - "Include JSDoc on exported symbols"
+      - "Follow existing code conventions"
+    prohibitions:
+      - "Never modify test fixtures"
+      - "Never commit secrets or API keys"
+
+  - name: tester
+    role: tester
+    specialist: tester
+    obligations:
+      - "Achieve ≥80% branch coverage on changed files"
+      - "Write edge-case tests for error paths"
+    permissions:
+      - "May create test helper utilities"
+    prohibitions:
+      - "Never modify source code (only tests)"
+
+  - name: reviewer
+    role: reviewer
+    obligations:
+      - "Check for security vulnerabilities"
+      - "Verify type safety"
+      - "Ensure no regressions"
+    prohibitions:
+      - "Never auto-approve"
+
+movements:
+  - name: plan
+    goal: "Analyze spec and produce implementation plan"
+    goal_gate: 0.8
+    assigned_to: planner
+    type: document
+    model_config:
+      tier: sota
+      max_tokens: 30000
+
+  - name: implement
+    goal: "Write the feature code"
+    goal_gate: 0.7
+    assigned_to: coder
+    type: code
+    context_strategy: indexed
+    model_config:
+      tier: fast
+      max_tokens: 50000
+    retry:
+      max_attempts: 3
+      backoff: exponential
+
+  - name: test
+    goal: "Write comprehensive tests"
+    goal_gate: 0.75
+    assigned_to: tester
+    type: test
+    model_config:
+      tier: fast
+      max_tokens: 30000
+    retry:
+      max_attempts: 2
+      backoff: fixed
+
+  - name: review
+    goal: "Review all changes for quality and security"
+    goal_gate: 0.8
+    assigned_to: reviewer
+    type: review
+    critic: true
+    model_config:
+      tier: sota
+      max_tokens: 20000
+
+  edges:
+    - { from: plan, to: implement }
+    - { from: implement, to: test }
+    - { from: test, to: review }
+
+rules:
+  satisfaction_threshold: 0.75

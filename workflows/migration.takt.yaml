@@ -1,0 +1,79 @@
+# Migration — TAKT Workflow
+#
+# Guided codebase migration (e.g., framework upgrade, API change).
+
+name: migration
+version: "1.0"
+goal: "Migrate codebase from framework/API version X to Y"
+
+personas:
+  - name: analyst
+    role: planner
+    obligations:
+      - "Identify all affected files and patterns"
+      - "Produce migration plan with risk assessment"
+      - "Define rollback strategy"
+    prohibitions:
+      - "Never skip dependency analysis"
+
+  - name: migrator
+    role: coder
+    specialist: refactorer
+    obligations:
+      - "Apply migration changes incrementally"
+      - "Preserve existing test coverage"
+      - "Document breaking changes"
+    prohibitions:
+      - "Never change behavior beyond migration scope"
+      - "Never delete tests without replacement"
+
+  - name: verifier
+    role: tester
+    specialist: tester
+    obligations:
+      - "Verify migration completeness"
+      - "Run full test suite after changes"
+      - "Test backward compatibility where required"
+
+movements:
+  - name: analyze
+    goal: "Analyze migration scope and impact"
+    goal_gate: 0.85
+    assigned_to: analyst
+    type: document
+    context_strategy: full
+    model_config:
+      tier: sota
+      max_tokens: 30000
+
+  - name: migrate
+    goal: "Apply migration changes"
+    goal_gate: 0.7
+    assigned_to: migrator
+    type: refactor
+    context_strategy: indexed
+    model_config:
+      tier: fast
+      max_tokens: 60000
+    retry:
+      max_attempts: 5
+      backoff: exponential
+
+  - name: verify
+    goal: "Verify migration correctness"
+    goal_gate: 0.8
+    assigned_to: verifier
+    type: test
+    model_config:
+      tier: fast
+      max_tokens: 30000
+    retry:
+      max_attempts: 2
+      backoff: fixed
+
+  edges:
+    - { from: analyze, to: migrate }
+    - { from: migrate, to: verify }
+
+rules:
+  satisfaction_threshold: 0.8

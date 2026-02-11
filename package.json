@@ -1,0 +1,53 @@
+{
+  "name": "@machinemates-ai/dark-factory",
+  "version": "0.1.0",
+  "description": "Autonomous multi-agent coding orchestrator CLI — Codex App Server + Claude Agent SDK V2, blind validators, DAG-aware TAKT YAML workflows, CloudEvents + A2A bus, Three-Ring Memory, Semantic Codebase Indexer, node:sqlite ledger. Recursive Viable System Model (Beer).",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://github.com/machinemates-ai/dark-factory",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/machinemates-ai/dark-factory.git"
+  },
+  "bin": {
+    "dark-factory": "./bin/dark-factory.ts"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "tsc --noEmit",
+    "dev": "tsx bin/dark-factory.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.1.0",
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "eventemitter3": "^5.0.1",
+    "tree-sitter": "^0.22.4",
+    "tree-sitter-python": "^0.23.6",
+    "tree-sitter-typescript": "^0.23.2",
+    "yaml": "^2.7.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.1.0"
+  },
+  "keywords": [
+    "multi-agent",
+    "orchestrator",
+    "codex",
+    "claude",
+    "coding-agent",
+    "viable-system-model",
+    "dark-factory",
+    "takt",
+    "cybernetic"
+  ]
+}
