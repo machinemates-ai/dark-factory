@@ -145,3 +145,112 @@ export function getEventsByTask(db: DatabaseSync, taskId: string): EventRow[] {
     'SELECT * FROM events WHERE task_id = ? ORDER BY timestamp',
   ).all(taskId) as unknown as EventRow[];
 }
+
+// ─── Task Lifecycle Updates ───────────────────────────────────────────────────
+
+export function updateTaskStatus(
+  db: DatabaseSync,
+  taskId: string,
+  status: LedgerTaskStatus,
+): void {
+  const completedAt = status === 'completed' || status === 'failed'
+    ? new Date().toISOString()
+    : null;
+  db.prepare(
+    'UPDATE tasks SET status = ?, completed_at = COALESCE(?, completed_at) WHERE id = ?',
+  ).run(status, completedAt, taskId);
+}
+
+export function updateTaskAgent(
+  db: DatabaseSync,
+  taskId: string,
+  agentId: string,
+  threadId: string | null,
+): void {
+  db.prepare(
+    'UPDATE tasks SET agent_id = ?, thread_id = ? WHERE id = ?',
+  ).run(agentId, threadId, taskId);
+}
+
+export function updateTaskTokens(
+  db: DatabaseSync,
+  taskId: string,
+  tokensUsed: number,
+  editEntropy: number | null,
+): void {
+  db.prepare(
+    'UPDATE tasks SET tokens_used = ?, edit_entropy = ? WHERE id = ?',
+  ).run(tokensUsed, editEntropy, taskId);
+}
+
+// ─── Run Metric Updates ───────────────────────────────────────────────────────
+
+export function updateRunTokens(
+  db: DatabaseSync,
+  runId: string,
+  deltaTokens: number,
+  deltaCost: number,
+): void {
+  db.prepare(
+    'UPDATE runs SET total_tokens = total_tokens + ?, total_cost = total_cost + ? WHERE id = ?',
+  ).run(deltaTokens, deltaCost, runId);
+}
+
+export function incrementEntropyAlerts(
+  db: DatabaseSync,
+  runId: string,
+): void {
+  db.prepare(
+    'UPDATE runs SET entropy_alerts = entropy_alerts + 1 WHERE id = ?',
+  ).run(runId);
+}
+
+// ─── Context Summaries CRUD ───────────────────────────────────────────────────
+
+export function insertContextSummary(
+  db: DatabaseSync,
+  summary: {
+    id: string;
+    runId: string;
+    scope: 'overview' | 'module' | 'detail';
+    targetPath: string | null;
+    summaryText: string;
+    tokenCount: number;
+  },
+): void {
+  db.prepare(
+    `INSERT INTO context_summaries (id, run_id, scope, target_path, summary_text, token_count)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+  ).run(
+    summary.id,
+    summary.runId,
+    summary.scope,
+    summary.targetPath,
+    summary.summaryText,
+    summary.tokenCount,
+  );
+}
+
+export function getContextSummariesByRun(
+  db: DatabaseSync,
+  runId: string,
+  scope?: 'overview' | 'module' | 'detail',
+): ContextSummaryRow[] {
+  if (scope) {
+    return db.prepare(
+      'SELECT * FROM context_summaries WHERE run_id = ? AND scope = ? AND invalidated_at IS NULL ORDER BY created_at',
+    ).all(runId, scope) as unknown as ContextSummaryRow[];
+  }
+  return db.prepare(
+    'SELECT * FROM context_summaries WHERE run_id = ? AND invalidated_at IS NULL ORDER BY created_at',
+  ).all(runId) as unknown as ContextSummaryRow[];
+}
+
+export function invalidateContextSummary(
+  db: DatabaseSync,
+  summaryId: string,
+): void {
+  db.prepare(
+    'UPDATE context_summaries SET invalidated_at = datetime(\'now\') WHERE id = ?',
+  ).run(summaryId);
+}

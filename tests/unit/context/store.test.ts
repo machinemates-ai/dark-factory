@@ -66,4 +66,48 @@ describe('resolveContext', () => {
     const parsed = JSON.parse(ctx.content);
     expect(parsed.task).toBeUndefined();
   });
+
+  it('resolves indexed strategy with index overview', () => {
+    const store = seededStore();
+    store.global_context.index_overview = '42 symbols, 120 edges';
+    const ctx = resolveContext(store, 'indexed', 'task-1', []);
+    expect(ctx.strategy).toBe('indexed');
+    const parsed = JSON.parse(ctx.content);
+    expect(parsed.index_overview).toBe('42 symbols, 120 edges');
+    expect(parsed.task.objective).toBe('implement feature X');
+  });
+
+  it('indexed strategy without overview returns undefined', () => {
+    const store = seededStore();
+    const ctx = resolveContext(store, 'indexed', 'task-1', []);
+    const parsed = JSON.parse(ctx.content);
+    expect(parsed.index_overview).toBeUndefined();
+  });
+
+  it('full strategy filters to target files only', () => {
+    const store = seededStore();
+    store.file_specific_context.set('src/b.ts', {
+      purpose: 'module b',
+      dependencies: [],
+      change_history: [],
+    });
+    // Request only src/a.ts — src/b.ts should be excluded
+    const ctx = resolveContext(store, 'full', 'task-1', ['src/a.ts']);
+    const parsed = JSON.parse(ctx.content);
+    expect(parsed.files['src/a.ts']).toBeDefined();
+    expect(parsed.files['src/b.ts']).toBeUndefined();
+  });
+
+  it('full strategy with empty targetFiles includes all files', () => {
+    const store = seededStore();
+    store.file_specific_context.set('src/b.ts', {
+      purpose: 'module b',
+      dependencies: [],
+      change_history: [],
+    });
+    const ctx = resolveContext(store, 'full', 'task-1', []);
+    const parsed = JSON.parse(ctx.content);
+    expect(parsed.files['src/a.ts']).toBeDefined();
+    expect(parsed.files['src/b.ts']).toBeDefined();
+  });
 });

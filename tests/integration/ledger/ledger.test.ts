@@ -16,6 +16,14 @@ import {
   insertEvent,
   getEventsByTask,
   getEventsByRun,
+  updateTaskStatus,
+  updateTaskAgent,
+  updateTaskTokens,
+  updateRunTokens,
+  incrementEntropyAlerts,
+  insertContextSummary,
+  getContextSummariesByRun,
+  invalidateContextSummary,
 } from '../../../src/ledger/queries.js';
 
 describe('ledger (SQLite)', () => {
@@ -166,5 +174,133 @@ describe('ledger (SQLite)', () => {
     });
     const events = getEventsByRun(db, 'run-1');
     expect(events[0]!.run_id).toBe('run-1');
+  });
+
+  // ─── Task Lifecycle Updates ─────────────────────────────────────────────────
+
+  it('updateTaskStatus transitions task lifecycle', () => {
+    createRun(db, 'run-1', 'yaml');
+    createTask(db, {
+      id: 'task-1',
+      runId: 'run-1',
+      movementName: 'code',
+      dependsOn: [],
+      specialistType: null,
+    });
+    expect(getTasksByRun(db, 'run-1')[0]!.status).toBe('pending');
+
+    updateTaskStatus(db, 'task-1', 'assigned');
+    expect(getTasksByRun(db, 'run-1')[0]!.status).toBe('assigned');
+
+    updateTaskStatus(db, 'task-1', 'running');
+    expect(getTasksByRun(db, 'run-1')[0]!.status).toBe('running');
+
+    updateTaskStatus(db, 'task-1', 'completed');
+    const task = getTasksByRun(db, 'run-1')[0]!;
+    expect(task.status).toBe('completed');
+    expect(task.completed_at).not.toBeNull();
+  });
+
+  it('updateTaskAgent sets agent_id and thread_id', () => {
+    createRun(db, 'run-1', 'yaml');
+    createTask(db, {
+      id: 'task-1',
+      runId: 'run-1',
+      movementName: 'code',
+      dependsOn: [],
+      specialistType: null,
+    });
+    updateTaskAgent(db, 'task-1', 'codex-42', 'thread-abc');
+    const task = getTasksByRun(db, 'run-1')[0]!;
+    expect(task.agent_id).toBe('codex-42');
+    expect(task.thread_id).toBe('thread-abc');
+  });
+
+  it('updateTaskTokens stores token usage and entropy', () => {
+    createRun(db, 'run-1', 'yaml');
+    createTask(db, {
+      id: 'task-1',
+      runId: 'run-1',
+      movementName: 'code',
+      dependsOn: [],
+      specialistType: null,
+    });
+    updateTaskTokens(db, 'task-1', 4500, 0.31);
+    const task = getTasksByRun(db, 'run-1')[0]!;
+    expect(task.tokens_used).toBe(4500);
+    expect(task.edit_entropy).toBeCloseTo(0.31);
+  });
+
+  // ─── Run Metric Updates ─────────────────────────────────────────────────────
+
+  it('updateRunTokens incrementally adds tokens and cost', () => {
+    createRun(db, 'run-1', 'yaml');
+    updateRunTokens(db, 'run-1', 1000, 0.05);
+    updateRunTokens(db, 'run-1', 2000, 0.10);
+    const run = getRun(db, 'run-1')!;
+    expect(run.total_tokens).toBe(3000);
+    expect(run.total_cost).toBeCloseTo(0.15);
+  });
+
+  it('incrementEntropyAlerts bumps counter', () => {
+    createRun(db, 'run-1', 'yaml');
+    expect(getRun(db, 'run-1')!.entropy_alerts).toBe(0);
+    incrementEntropyAlerts(db, 'run-1');
+    incrementEntropyAlerts(db, 'run-1');
+    expect(getRun(db, 'run-1')!.entropy_alerts).toBe(2);
+  });
+
+  // ─── Context Summaries CRUD ─────────────────────────────────────────────────
+
+  it('inserts and retrieves context summaries', () => {
+    createRun(db, 'run-1', 'yaml');
+    insertContextSummary(db, {
+      id: 'cs-1',
+      runId: 'run-1',
+      scope: 'overview',
+      targetPath: null,
+      summaryText: 'Project overview',
+      tokenCount: 480,
+    });
+    insertContextSummary(db, {
+      id: 'cs-2',
+      runId: 'run-1',
+      scope: 'module',
+      targetPath: 'src/ledger',
+      summaryText: 'Ledger module',
+      tokenCount: 920,
+    });
+    const all = getContextSummariesByRun(db, 'run-1');
+    expect(all).toHaveLength(2);
+    const scopes = all.map(r => r.scope).sort();
+    expect(scopes).toEqual(['module', 'overview']);
+    const mod = all.find(r => r.scope === 'module')!;
+    expect(mod.target_path).toBe('src/ledger');
+  });
+
+  it('filters context summaries by scope', () => {
+    createRun(db, 'run-1', 'yaml');
+    insertContextSummary(db, {
+      id: 'cs-1', runId: 'run-1', scope: 'overview',
+      targetPath: null, summaryText: 'overview', tokenCount: 100,
+    });
+    insertContextSummary(db, {
+      id: 'cs-2', runId: 'run-1', scope: 'module',
+      targetPath: 'src/a', summaryText: 'module a', tokenCount: 200,
+    });
+    const overviews = getContextSummariesByRun(db, 'run-1', 'overview');
+    expect(overviews).toHaveLength(1);
+    expect(overviews[0]!.id).toBe('cs-1');
+  });
+
+  it('invalidateContextSummary hides from active queries', () => {
+    createRun(db, 'run-1', 'yaml');
+    insertContextSummary(db, {
+      id: 'cs-1', runId: 'run-1', scope: 'overview',
+      targetPath: null, summaryText: 'old overview', tokenCount: 100,
+    });
+    expect(getContextSummariesByRun(db, 'run-1')).toHaveLength(1);
+    invalidateContextSummary(db, 'cs-1');
+    expect(getContextSummariesByRun(db, 'run-1')).toHaveLength(0);
   });
 });

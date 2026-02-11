@@ -22,12 +22,30 @@ export interface ComplexityMetrics {
 
 // ─── Auto Depth Selection ─────────────────────────────────────────────────────
 
+/**
+ * Select orchestration depth from composite complexity.
+ *
+ * Primary signal is LOC. High dependency fan-out or file churn
+ * escalate the effective complexity:
+ *   effective = LOC + fanOutPenalty + churnPenalty
+ *
+ * This lets a small-LOC project with dense coupling still qualify
+ * for two-tier orchestration.
+ */
 export function selectDepth(metrics: ComplexityMetrics): OrchestrationDepth {
-  if (metrics.totalLoc < SINGLE_AGENT_THRESHOLD) {
+  const fanOutPenalty = metrics.depGraphFanOut > 50
+    ? 2000
+    : metrics.depGraphFanOut > 20
+      ? 500
+      : 0;
+  const churnPenalty = metrics.fileChurnScore > 0.5 ? 1000 : 0;
+  const effective = metrics.totalLoc + fanOutPenalty + churnPenalty;
+
+  if (effective < SINGLE_AGENT_THRESHOLD) {
     return 'single';
   }
 
-  if (metrics.totalLoc < TWO_TIER_THRESHOLD) {
+  if (effective < TWO_TIER_THRESHOLD) {
     return 'two-tier';
   }
 
