@@ -79,19 +79,26 @@ export function resolveContext(
   store: ContextStore,
   strategy: ContextStrategy,
   taskId: string,
-  _targetFiles: string[],
+  targetFiles: string[],
 ): ResolvedContext {
   switch (strategy) {
-    case 'full':
+    case 'full': {
+      // Filter file contexts to target files if specified, otherwise include all
+      const fileEntries = targetFiles.length > 0
+        ? targetFiles
+            .map((f: string) => [f, store.file_specific_context.get(f)] as const)
+            .filter((entry): entry is readonly [string, FileContext] => entry[1] !== undefined)
+        : [...store.file_specific_context.entries()];
       return {
         strategy,
         content: JSON.stringify({
           global: store.global_context,
-          files: Object.fromEntries(store.file_specific_context),
+          files: Object.fromEntries(fileEntries),
           task: store.task_context.get(taskId),
         }),
         tokenEstimate: 50_000, // Placeholder
       };
+    }
     case 'summary':
       return {
         strategy,

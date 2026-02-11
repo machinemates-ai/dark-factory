@@ -51,5 +51,15 @@ export async function debriefRun(
     stored++;
   }
 
+  // Store architecture decisions
+  for (const decision of input.decisions) {
+    await store.store({
+      content: `Decision from run ${input.runId}: ${decision}`,
+      tags: ['decision', input.runId],
+      source: `run:${input.runId}`,
+    });
+    stored++;
+  }
+
   return stored;
 }

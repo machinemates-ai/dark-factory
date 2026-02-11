@@ -46,6 +46,7 @@ const MIGRATIONS = [
 
   CREATE TABLE IF NOT EXISTS events (
     id TEXT PRIMARY KEY,
+    run_id TEXT NOT NULL REFERENCES runs(id),
     task_id TEXT REFERENCES tasks(id),
     event_type TEXT NOT NULL,
     payload TEXT NOT NULL DEFAULT '{}',
@@ -67,6 +68,7 @@ const MIGRATIONS = [
 
   CREATE INDEX IF NOT EXISTS idx_tasks_run_id ON tasks(run_id);
   CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
+  CREATE INDEX IF NOT EXISTS idx_events_run_id ON events(run_id);
   CREATE INDEX IF NOT EXISTS idx_events_task_id ON events(task_id);
   CREATE INDEX IF NOT EXISTS idx_events_type ON events(event_type);
   CREATE INDEX IF NOT EXISTS idx_context_summaries_run ON context_summaries(run_id, scope);

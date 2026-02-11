@@ -15,6 +15,7 @@ import {
   getTasksByRun,
   insertEvent,
   getEventsByTask,
+  getEventsByRun,
 } from '../../../src/ledger/queries.js';
 
 describe('ledger (SQLite)', () => {
@@ -101,7 +102,7 @@ describe('ledger (SQLite)', () => {
 
   // ─── Event Logging ──────────────────────────────────────────────────────────
 
-  it('records and retrieves events', () => {
+  it('records and retrieves events by task', () => {
     createRun(db, 'run-1', 'yaml');
     createTask(db, {
       id: 'task-1',
@@ -112,6 +113,7 @@ describe('ledger (SQLite)', () => {
     });
     insertEvent(db, {
       id: 'evt-1',
+      runId: 'run-1',
       taskId: 'task-1',
       eventType: 'task.started',
       payload: JSON.stringify({ foo: 'bar' }),
@@ -120,5 +122,49 @@ describe('ledger (SQLite)', () => {
     expect(events).toHaveLength(1);
     expect(events[0]!.event_type).toBe('task.started');
     expect(JSON.parse(events[0]!.payload)).toEqual({ foo: 'bar' });
+  });
+
+  it('retrieves events by run including global events', () => {
+    createRun(db, 'run-1', 'yaml');
+    createTask(db, {
+      id: 'task-1',
+      runId: 'run-1',
+      movementName: 'code',
+      dependsOn: [],
+      specialistType: null,
+    });
+    // Task-associated event
+    insertEvent(db, {
+      id: 'evt-1',
+      runId: 'run-1',
+      taskId: 'task-1',
+      eventType: 'task.completed',
+      payload: '{}',
+    });
+    // Global event (no task) — e.g., algedonic
+    insertEvent(db, {
+      id: 'evt-2',
+      runId: 'run-1',
+      taskId: null,
+      eventType: 'algedonic.critical',
+      payload: JSON.stringify({ trigger: 'cost-limit' }),
+    });
+    const events = getEventsByRun(db, 'run-1');
+    expect(events).toHaveLength(2);
+    expect(events.some((e) => e.task_id === null)).toBe(true);
+    expect(events.some((e) => e.event_type === 'algedonic.critical')).toBe(true);
+  });
+
+  it('event row includes run_id', () => {
+    createRun(db, 'run-1', 'yaml');
+    insertEvent(db, {
+      id: 'evt-1',
+      runId: 'run-1',
+      taskId: null,
+      eventType: 'entropy.alert',
+      payload: '{}',
+    });
+    const events = getEventsByRun(db, 'run-1');
+    expect(events[0]!.run_id).toBe('run-1');
   });
 });

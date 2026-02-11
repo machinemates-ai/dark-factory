@@ -26,14 +26,6 @@ export const Topics = {
   entropy: (runId: string) => `entropy.${runId}.alert` as const,
 } as const;
 
-// ─── Topic Patterns (for wildcard subscriptions) ──────────────────────────────
-
-export const TopicPatterns = {
-  allTasks: (runId: string) => `task.${runId}.*` as const,
-  allValidation: (taskId: string) => `validation.${taskId}.*` as const,
-  allAlgedonic: (runId: string) => `algedonic.${runId}.*` as const,
-} as const;
-
 // ─── Common Event Types ───────────────────────────────────────────────────────
 
 export const EventTypes = {

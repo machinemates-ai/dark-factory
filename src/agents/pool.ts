@@ -6,8 +6,10 @@ import type { CodexAgent } from './codex-agent.js';
 import type { ClaudeAgent } from './claude-agent.js';
 
 export interface AgentPool {
-  readonly codexAgents: Map<string, CodexAgent>;
-  readonly claudeAgents: Map<string, ClaudeAgent>;
+  getCodex(id: string): CodexAgent | undefined;
+  getClaude(id: string): ClaudeAgent | undefined;
+  readonly codexCount: number;
+  readonly claudeCount: number;
   registerCodex(agent: CodexAgent): void;
   registerClaude(agent: ClaudeAgent): void;
   disposeAll(): void;
@@ -18,8 +20,21 @@ export function createAgentPool(): AgentPool {
   const claudeAgents = new Map<string, ClaudeAgent>();
 
   return {
-    codexAgents,
-    claudeAgents,
+    getCodex(id: string) {
+      return codexAgents.get(id);
+    },
+
+    getClaude(id: string) {
+      return claudeAgents.get(id);
+    },
+
+    get codexCount() {
+      return codexAgents.size;
+    },
+
+    get claudeCount() {
+      return claudeAgents.size;
+    },
 
     registerCodex(agent) {
       codexAgents.set(agent.agentId, agent);

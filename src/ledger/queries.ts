@@ -42,6 +42,7 @@ export interface TaskRow {
 
 export interface EventRow {
   id: string;
+  run_id: string;
   task_id: string | null;
   event_type: string;
   payload: string; // JSON
@@ -122,22 +123,20 @@ export function insertEvent(
   db: DatabaseSync,
   event: {
     id: string;
+    runId: string;
     taskId: string | null;
     eventType: string;
     payload: string;
   },
 ): void {
   db.prepare(
-    'INSERT INTO events (id, task_id, event_type, payload) VALUES (?, ?, ?, ?)',
-  ).run(event.id, event.taskId, event.eventType, event.payload);
+    'INSERT INTO events (id, run_id, task_id, event_type, payload) VALUES (?, ?, ?, ?, ?)',
+  ).run(event.id, event.runId, event.taskId, event.eventType, event.payload);
 }
 
 export function getEventsByRun(db: DatabaseSync, runId: string): EventRow[] {
   return db.prepare(
-    `SELECT e.* FROM events e
-     JOIN tasks t ON e.task_id = t.id
-     WHERE t.run_id = ?
-     ORDER BY e.timestamp`,
+    'SELECT * FROM events WHERE run_id = ? ORDER BY timestamp',
   ).all(runId) as unknown as EventRow[];
 }
 
