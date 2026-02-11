@@ -98,7 +98,7 @@ export interface PersonaRef {
   readonly blind: boolean;
 }
 
-export type PersonaRole = 'lead' | 'worker' | 'judge' | 'summarizer';
+export type PersonaRole = 'lead' | 'worker' | 'judge' | 'summarizer' | 'planner' | 'coder' | 'tester' | 'reviewer';
 export type ModelTier = 'sota' | 'fast' | 'static';
 export type SpecialistType = 'coder' | 'tester' | 'refactorer' | 'doc-writer';
 export type ContextStrategy = 'full' | 'summary' | 'minimal' | 'indexed';
@@ -163,7 +163,7 @@ export type LedgerTaskStatus = 'pending' | 'assigned' | 'running' | 'completed' 
 
 // ─── Algedonic Severity (D61) ─────────────────────────────────────────────────
 
-export type AlgedonicSeverity = 'warning' | 'critical' | 'fatal';
+export type AlgedonicSeverity = 'info' | 'warning' | 'error' | 'critical' | 'fatal';
 
 // ─── Orchestration Depth (D52) ────────────────────────────────────────────────
 
@@ -171,4 +171,4 @@ export type OrchestrationDepth = 'single' | 'two-tier' | 'full';
 
 // ─── Memory Types (D63/D64) ──────────────────────────────────────────────────
 
-export type MemoryMode = 'none' | 'run' | 'project';
+export type MemoryMode = 'none' | 'run' | 'session' | 'project';

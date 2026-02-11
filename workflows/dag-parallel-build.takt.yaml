@@ -106,13 +106,13 @@ movements:
       tier: sota
       max_tokens: 30000
 
-  edges:
-    - { from: plan, to: component-a }
-    - { from: plan, to: component-b }
-    - { from: plan, to: component-c }
-    - { from: component-a, to: integrate }
-    - { from: component-b, to: integrate }
-    - { from: component-c, to: integrate }
+edges:
+  - { from: plan, to: component-a }
+  - { from: plan, to: component-b }
+  - { from: plan, to: component-c }
+  - { from: component-a, to: integrate }
+  - { from: component-b, to: integrate }
+  - { from: component-c, to: integrate }
 
 rules:
   satisfaction_threshold: 0.75

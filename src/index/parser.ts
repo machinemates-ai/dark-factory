@@ -18,7 +18,7 @@ export interface SymbolDef {
   readonly language: string;
 }
 
-export type EdgeKind = 'calls' | 'extends' | 'implements' | 'imports';
+export type EdgeKind = 'calls' | 'extends' | 'implements' | 'imports' | 'exports' | 'type_reference';
 
 export interface SymbolEdge {
   readonly from: string; // qualified name

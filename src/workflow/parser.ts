@@ -6,7 +6,7 @@
  */
 
 import { parse as parseYaml } from 'yaml';
-import { TaktPieceSchema, type TaktPiece, type Movement } from './schema.js';
+import { TaktPieceSchema, type TaktPiece, type Edge } from './schema.js';
 
 // ─── Parse & Validate ─────────────────────────────────────────────────────────
 
@@ -44,8 +44,9 @@ export function parseTaktYaml(yamlContent: string): ParseResult | ParseError {
 
   const piece = result.data;
 
-  // DAG validation — topological sort
-  const dagResult = topologicalSort(piece.movements);
+  // DAG validation — topological sort using top-level edges
+  const movementNames = piece.movements.map((m) => m.name);
+  const dagResult = topologicalSort(movementNames, piece.edges);
   if (!dagResult.success) {
     return { success: false, errors: [dagResult.error] };
   }
@@ -65,8 +66,11 @@ interface TopoError {
   error: string;
 }
 
-function topologicalSort(movements: readonly Movement[]): TopoSuccess | TopoError {
-  const names = new Set(movements.map((m) => m.name));
+function topologicalSort(
+  movementNames: readonly string[],
+  edges: readonly Edge[],
+): TopoSuccess | TopoError {
+  const names = new Set(movementNames);
   const adjacency = new Map<string, string[]>();
   const inDegree = new Map<string, number>();
 
@@ -76,18 +80,22 @@ function topologicalSort(movements: readonly Movement[]): TopoSuccess | TopoErro
     inDegree.set(name, 0);
   }
 
-  // Build graph from edges
-  for (const movement of movements) {
-    for (const edge of movement.edges) {
-      if (!names.has(edge.to)) {
-        return {
-          success: false,
-          error: `Movement "${movement.name}" has edge to unknown movement "${edge.to}"`,
-        };
-      }
-      adjacency.get(movement.name)!.push(edge.to);
-      inDegree.set(edge.to, (inDegree.get(edge.to) ?? 0) + 1);
+  // Build graph from top-level edges
+  for (const edge of edges) {
+    if (!names.has(edge.from)) {
+      return {
+        success: false,
+        error: `Edge references unknown movement "${edge.from}"`,
+      };
     }
+    if (!names.has(edge.to)) {
+      return {
+        success: false,
+        error: `Edge references unknown movement "${edge.to}"`,
+      };
+    }
+    adjacency.get(edge.from)!.push(edge.to);
+    inDegree.set(edge.to, (inDegree.get(edge.to) ?? 0) + 1);
   }
 
   // Kahn's algorithm

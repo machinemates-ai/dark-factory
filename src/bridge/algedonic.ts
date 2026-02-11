@@ -35,7 +35,9 @@ export type AlgedonicAction =
   | { type: 'shutdown'; reason: string };
 
 export interface AlgedonicHandler {
+  onInfo(event: AlgedonicEventData): AlgedonicAction;
   onWarning(event: AlgedonicEventData): AlgedonicAction;
+  onError(event: AlgedonicEventData): AlgedonicAction;
   onCritical(event: AlgedonicEventData): AlgedonicAction;
   onFatal(event: AlgedonicEventData): AlgedonicAction;
 }
@@ -43,8 +45,14 @@ export interface AlgedonicHandler {
 // ─── Default Handler ──────────────────────────────────────────────────────────
 
 export const defaultAlgedonicHandler: AlgedonicHandler = {
+  onInfo(_event) {
+    return { type: 'continue' };
+  },
   onWarning(_event) {
     return { type: 'continue' };
+  },
+  onError(event) {
+    return { type: 'pause', reason: event.message };
   },
   onCritical(event) {
     return { type: 'pause', reason: event.message };
@@ -61,7 +69,7 @@ export function wireAlgedonic(
   runId: string,
   handler: AlgedonicHandler = defaultAlgedonicHandler,
 ): () => void {
-  const severities: AlgedonicSeverity[] = ['warning', 'critical', 'fatal'];
+  const severities: AlgedonicSeverity[] = ['info', 'warning', 'error', 'critical', 'fatal'];
   const unsubscribers: (() => void)[] = [];
 
   for (const severity of severities) {
@@ -69,8 +77,14 @@ export function wireAlgedonic(
     const unsub = bus.on<AlgedonicEventData>(topic, (event) => {
       const data = event.data;
       switch (data.severity) {
+        case 'info':
+          handler.onInfo(data);
+          break;
         case 'warning':
           handler.onWarning(data);
+          break;
+        case 'error':
+          handler.onError(data);
           break;
         case 'critical':
           handler.onCritical(data);

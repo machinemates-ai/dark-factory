@@ -71,9 +71,9 @@ movements:
       max_attempts: 2
       backoff: fixed
 
-  edges:
-    - { from: analyze, to: migrate }
-    - { from: migrate, to: verify }
+edges:
+  - { from: analyze, to: migrate }
+  - { from: migrate, to: verify }
 
 rules:
   satisfaction_threshold: 0.8

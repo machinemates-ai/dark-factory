@@ -74,7 +74,7 @@ export function createRun(
 }
 
 export function getRun(db: DatabaseSync, id: string): RunRow | undefined {
-  return db.prepare('SELECT * FROM runs WHERE id = ?').get(id) as
+  return db.prepare('SELECT * FROM runs WHERE id = ?').get(id) as unknown as
     | RunRow
     | undefined;
 }

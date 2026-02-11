@@ -46,7 +46,7 @@ movements:
       tier: sota
       max_tokens: 15000
 
-  edges: []
+edges: []
 
 rules:
   satisfaction_threshold: 0.8

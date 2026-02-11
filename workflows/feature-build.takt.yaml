@@ -92,10 +92,10 @@ movements:
       tier: sota
       max_tokens: 20000
 
-  edges:
-    - { from: plan, to: implement }
-    - { from: implement, to: test }
-    - { from: test, to: review }
+edges:
+  - { from: plan, to: implement }
+  - { from: implement, to: test }
+  - { from: test, to: review }
 
 rules:
-  satisfaction_threshold: 0.75
+  satisfaction_threshold: 0.8
